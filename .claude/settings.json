@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import torch; print\\('torch:', torch.__version__\\); import numpy; print\\('numpy:', numpy.__version__\\); import scipy; print\\('scipy:', scipy.__version__\\); import matplotlib; print\\('matplotlib:', matplotlib.__version__\\)\")",
+      "Bash(python3 -c \"import numpy; print\\('numpy:', numpy.__version__\\)\")",
+      "Bash(python3 -c \"import scipy; print\\('scipy:', scipy.__version__\\)\")",
+      "Bash(python3 -c \"import matplotlib; print\\('matplotlib:', matplotlib.__version__\\)\")",
+      "Bash(pip show *)",
+      "Bash(mkdir -p /home/paolofranceschi/pinn_2026/models /home/paolofranceschi/pinn_2026/systems /home/paolofranceschi/pinn_2026/utils)",
+      "Bash(python3 -c \"import torch; print\\('torch:', torch.__version__\\)\")",
+      "Bash(time python3 compare_models.py)",
+      "Bash(python3 -c ' *)",
+      "Bash(time python3 harmonic_oscillator_comparison.py)",
+      "Bash(time python3 spring_pendulum_comparison.py)",
+      "Bash(python physics_advantage.py)",
+      "Bash(python -)",
+      "Bash(python pinn_vs_nn.py)",
+      "Bash(python lnn_vs_vanilla.py)",
+      "Bash(python delan_vs_vanilla.py)"
+    ],
+    "additionalDirectories": [
+      "/home/paolofranceschi/pinn_2026"
+    ]
+  }
+}
