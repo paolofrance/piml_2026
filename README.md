@@ -8,8 +8,8 @@ Lecture materials comparing three families of physics-aware neural networks agai
 pinn_2026/
 ├── pinn/               Physics-Informed Neural Networks
 │   ├── README.md
-│   ├── pinn_vs_nn.py              damped harmonic oscillator (known params)
-│   ├── pinn_identification.py     damped HO — unknown δ (system ID)
+│   ├── pinn_vs_nn.py              damped mass-spring-damper (MCK) (known params)
+│   ├── pinn_identification.py     damped MCK — unknown δ (system ID)
 │   ├── pinn_cooling.py            Newton's law of cooling (known R + ID)
 │   └── pinn_2dof_spring_damper.py 2-DOF mass-spring-damper
 │
@@ -30,7 +30,7 @@ pinn_2026/
 │   └── vanilla_nn.py              VanillaNN baseline
 │
 ├── systems/            Ground-truth dynamical systems
-│   ├── harmonic_oscillator.py     damped HO — analytic solution
+│   ├── mass_spring_damper.py     damped MCK — analytic solution
 │   ├── pendulum.py                simple pendulum — scipy RK45
 │   └── spring_pendulum.py         spring pendulum 2-DOF — scipy RK45
 │

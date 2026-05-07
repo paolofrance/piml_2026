@@ -1,9 +1,9 @@
 """
-1D underdamped harmonic oscillator.
+1D underdamped mass-spring-damper (MCK system).
 
-ODE:  m x'' + mu x' + k x = 0
+ODE:  m x'' + c x' + k x = 0
       x'' + 2*delta*x' + omega0^2 * x = 0
-      (delta = mu/(2m),  omega0 = sqrt(k/m))
+      (delta = c/(2m),  omega0 = sqrt(k/m))
 
 Analytical solution (underdamped, delta < omega0):
   x(t) = exp(-delta*t) * 2*A * cos(phi + omega*t)
@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 
-class HarmonicOscillator:
+class MassSpringDamper:
     def __init__(self, delta: float = 2.0, omega0: float = 20.0):
         assert delta < omega0, "System must be underdamped (delta < omega0)"
         self.delta  = delta
@@ -27,8 +27,8 @@ class HarmonicOscillator:
         self.phi    = np.arctan(-delta / self.omega)
         self.A      = 1.0 / (2.0 * np.cos(self.phi))
         # ODE coefficients (m=1 normalisation)
-        self.mu = 2 * delta       # damping coefficient
-        self.k  = omega0**2       # spring constant
+        self.c = 2 * delta       # damping coefficient
+        self.k = omega0**2       # spring constant
 
     # ------------------------------------------------------------------
     # Analytical solution (numpy)
@@ -46,10 +46,10 @@ class HarmonicOscillator:
 
     def acceleration(self, t: np.ndarray) -> np.ndarray:
         """Exact second derivative d²x/dt² = -omega0²*x - 2*delta*xdot."""
-        return -self.omega0**2 * self.solution(t) - self.mu * self.velocity(t)
+        return -self.omega0**2 * self.solution(t) - self.c * self.velocity(t)
 
     # ------------------------------------------------------------------
-    # Analytical solution (torch) — mirrors the notebook's oscillator()
+    # Analytical solution (torch)
     # ------------------------------------------------------------------
 
     def solution_torch(self, t: torch.Tensor) -> torch.Tensor:

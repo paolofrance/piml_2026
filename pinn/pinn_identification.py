@@ -23,7 +23,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from systems import HarmonicOscillator
+from systems import MassSpringDamper
 
 SEED   = 0
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -42,15 +42,15 @@ DELTA_TRUE = 2.0
 OMEGA0     = 20.0
 DELTA_INIT = 0.5          # intentionally wrong starting guess
 
-HO      = HarmonicOscillator(delta=DELTA_TRUE, omega0=OMEGA0)
+mck      = MassSpringDamper(delta=DELTA_TRUE, omega0=OMEGA0)
 T_TRAIN = (0.0, 0.36)
 T_EVAL  = (0.0, 1.0)
 N_TRAIN, N_EVAL = 10, 500
 
 t_train = np.linspace(*T_TRAIN, N_TRAIN)
-x_train = HO.solution(t_train)
+x_train = mck.solution(t_train)
 t_eval  = np.linspace(*T_EVAL, N_EVAL)
-x_true  = HO.solution(t_eval)
+x_true  = mck.solution(t_eval)
 
 t_tr = torch.tensor(t_train[:, None], dtype=torch.float32, device=DEVICE)
 x_tr = torch.tensor(x_train[:, None], dtype=torch.float32, device=DEVICE)
@@ -209,7 +209,7 @@ print(f"\nPINN-ID extrap improvement over NN: {gain:.1f}×")
 
 fig = plt.figure(figsize=(12, 9))
 fig.suptitle(
-    f"PINN System Identification — Damped Harmonic Oscillator\n"
+    f"PINN System Identification — Damped Mass-Spring-Damper (MCK)\n"
     f"ω₀={OMEGA0} known,  δ unknown  (true={DELTA_TRUE}, init={DELTA_INIT})  |  "
     f"10 observations from [0, 0.36]  |  shaded = extrapolation",
     fontsize=12, fontweight="bold",

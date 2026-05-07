@@ -1,7 +1,7 @@
 """
 pinn_vs_nn.py
 =============
-PINN vs plain NN on the damped harmonic oscillator.
+PINN vs plain NN on the damped mass-spring-damper (MCK).
 
 System  : ẍ + 2δẋ + ω₀²x = 0   (δ=2, ω₀=20, underdamped)
 Data    : 10 observations from t ∈ [0, 0.36]  (first ~1 oscillation)
@@ -22,7 +22,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from systems import HarmonicOscillator
+from systems import MassSpringDamper
 
 SEED   = 0
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -86,15 +86,15 @@ class TrajNN(nn.Module):
 # Data
 # ---------------------------------------------------------------------------
 
-HO      = HarmonicOscillator(delta=2.0, omega0=20.0)
+mck      = MassSpringDamper(delta=2.0, omega0=20.0)
 T_TRAIN = (0.0, 0.36)
 T_EVAL  = (0.0, 1.0)
 N_TRAIN, N_EVAL = 10, 500
 
 t_train = np.linspace(*T_TRAIN, N_TRAIN)
-x_train = HO.solution(t_train)
+x_train = mck.solution(t_train)
 t_eval  = np.linspace(*T_EVAL, N_EVAL)
-x_true  = HO.solution(t_eval)
+x_true  = mck.solution(t_eval)
 
 t_tr = torch.tensor(t_train[:, None], dtype=torch.float32, device=DEVICE)
 x_tr = torch.tensor(x_train[:, None], dtype=torch.float32, device=DEVICE)
@@ -106,7 +106,7 @@ t_ev = torch.tensor(t_eval[:,  None], dtype=torch.float32, device=DEVICE)
 
 EPOCHS_PINN, WARMUP = 20_000, 3_000
 
-pinn = PINN(HO.delta, HO.omega0, t_scale=T_EVAL[1]).to(DEVICE)
+pinn = PINN(mck.delta, mck.omega0, t_scale=T_EVAL[1]).to(DEVICE)
 opt  = torch.optim.Adam(pinn.parameters(), lr=1e-3)
 sch  = torch.optim.lr_scheduler.MultiStepLR(
     opt, milestones=[int(EPOCHS_PINN*.5), int(EPOCHS_PINN*.8)], gamma=0.5)
@@ -175,7 +175,7 @@ print(f"\nPINN extrap improvement over NN: {gain:.1f}×")
 # ---------------------------------------------------------------------------
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
-fig.suptitle("PINN vs plain NN — Damped Harmonic Oscillator\n"
+fig.suptitle("PINN vs plain NN — Damped Mass-Spring-Damper (MCK)\n"
              "10 observations from [0, 0.36]  |  shaded = extrapolation",
              fontsize=12, fontweight="bold")
 

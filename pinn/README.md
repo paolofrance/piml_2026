@@ -31,7 +31,7 @@ Collocation points must be sampled over the entire evaluation window `[0, T_eval
 
 ### Residual normalisation
 
-For ODEs with large characteristic frequencies (e.g. the damped harmonic oscillator with ω₀ = 20), the raw residual is O(ω₀²) ≈ 400. Without normalisation the physics term dominates the data term by orders of magnitude. The fix:
+For ODEs with large characteristic frequencies (e.g. the damped mass-spring-damper (MCK) with ω₀ = 20), the raw residual is O(ω₀²) ≈ 400. Without normalisation the physics term dominates the data term by orders of magnitude. The fix:
 
 ```python
 residual = (ẍ + 2δẋ + ω₀²x) / ω₀²   # O(1) regardless of ω₀
@@ -63,7 +63,7 @@ def delta(self):
 
 ## Experiments
 
-### 1. `pinn_vs_nn.py` — Damped harmonic oscillator (known parameters)
+### 1. `pinn_vs_nn.py` — Damped mass-spring-damper (MCK) (known parameters)
 
 **System:** `ẍ + 2δẋ + ω₀²x = 0`  (δ=2, ω₀=20, underdamped)
 
@@ -77,7 +77,7 @@ def delta(self):
 
 ---
 
-### 2. `pinn_identification.py` — Damped harmonic oscillator (unknown δ)
+### 2. `pinn_identification.py` — Damped mass-spring-damper (MCK) (unknown δ)
 
 **System:** same ODE, but δ is treated as unknown.
 

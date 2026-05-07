@@ -1,3 +1,3 @@
 from .pendulum import SimplePendulum
-from .harmonic_oscillator import HarmonicOscillator
+from .mass_spring_damper import MassSpringDamper
 from .spring_pendulum import SpringPendulum
