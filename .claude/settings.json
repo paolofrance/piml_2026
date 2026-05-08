@@ -16,7 +16,10 @@
       "Bash(python -)",
       "Bash(python pinn_vs_nn.py)",
       "Bash(python lnn_vs_vanilla.py)",
-      "Bash(python delan_vs_vanilla.py)"
+      "Bash(python delan_vs_vanilla.py)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('lnn/lnn_friction.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('excercises/pinn_multi_traj.py'\\).read\\(\\)\\); print\\('syntax OK'\\)\")"
     ],
     "additionalDirectories": [
       "/home/paolofranceschi/pinn_2026"

@@ -259,3 +259,71 @@ ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
+
+# ---------------------------------------------------------------------------
+# Animation — thermometer bars + growing temperature curves
+# ---------------------------------------------------------------------------
+from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
+
+_s = max(1, len(times) // 200)
+_ta   = times[::_s]
+_Td   = {"True": temps[::_s], "NN": T_nn[::_s],
+         "PINN": T_pinn[::_s], "PINN-ID": T_id[::_s]}
+_nf   = len(_ta)
+_names = ["True", "NN", "PINN", "PINN-ID"]
+_xs   = [0, 1, 2, 3]   # bar x positions
+
+fig_a, (ax_th, ax_tr) = plt.subplots(1, 2, figsize=(13, 5))
+fig_a.suptitle("Newton's Law of Cooling — temperature comparison", fontsize=11)
+
+# --- thermometer panel ---
+ax_th.set_xlim(-0.6, 3.6); ax_th.set_ylim(T_ENV - 5, T0 + 5)
+ax_th.set_xticks(_xs); ax_th.set_xticklabels(_names, fontsize=9)
+ax_th.set_ylabel("Temperature (°C)"); ax_th.grid(True, alpha=0.2, axis="y")
+ax_th.axhline(T_ENV, color="gray", ls="--", lw=1, label=f"T_env={T_ENV}°C")
+ax_th.legend(fontsize=8)
+_bars = {}
+for xi, nm in zip(_xs, _names):
+    bar, = ax_th.plot([xi, xi], [T_ENV, _Td[nm][0]],
+                      color=COLORS[nm], lw=18, solid_capstyle="butt")
+    _bars[nm] = bar
+    ax_th.text(xi, T_ENV - 3, nm, ha="center", va="top",
+               color=COLORS[nm], fontsize=8, fontweight="bold")
+_ttx = ax_th.text(0.98, 0.98, "", transform=ax_th.transAxes,
+                  ha="right", va="top", fontsize=9, color="gray")
+
+# --- trajectory panel: curves grow over time ---
+ax_tr.set_xlim(times[0], times[-1]); ax_tr.set_ylim(T_ENV - 3, T0 + 5)
+ax_tr.set_xlabel("t (s)"); ax_tr.set_ylabel("T(t) (°C)"); ax_tr.grid(True, alpha=0.3)
+ax_tr.axvline(300, color="gray", ls=":", lw=1.2, label="train end")
+ax_tr.scatter(t_data, T_data, s=50, color=COLORS["True"], zorder=10,
+              edgecolors="white", linewidths=0.5, label="obs")
+for nm in _names:
+    ax_tr.plot(times, _Td[nm]*(_s if False else 1), color=COLORS[nm],
+               lw=1, ls="--", alpha=0.3)
+_growL = {}
+for nm in _names:
+    ln, = ax_tr.plot([], [], color=COLORS[nm], lw=2, label=nm)
+    _growL[nm] = ln
+ax_tr.legend(fontsize=8)
+_cur, = ax_tr.plot([], [], color="k", lw=1.2, zorder=10)
+
+def _upd(i):
+    t_i = _ta[i]
+    mask = times <= t_i
+    for nm in _names:
+        _bars[nm].set_ydata([T_ENV, float(np.clip(_Td[nm][i], T_ENV, T0 + 5))])
+        _growL[nm].set_data(times[mask], temps[mask] if nm == "True" else
+                            (T_nn[mask] if nm == "NN" else
+                             (T_pinn[mask] if nm == "PINN" else T_id[mask])))
+    _cur.set_data([t_i, t_i], [T_ENV - 3, T0 + 5])
+    _ttx.set_text(f"t={t_i:.0f} s")
+
+_anim = FuncAnimation(fig_a, _upd, frames=_nf, interval=40, blit=False)
+_ap = os.path.join(RESULTS_DIR, "pinn_cooling_anim.mp4")
+try:
+    _anim.save(_ap, writer=FFMpegWriter(fps=25, bitrate=1800))
+except Exception:
+    _ap = _ap.replace(".mp4", ".gif"); _anim.save(_ap, writer=PillowWriter(fps=20))
+print(f"Saved: {_ap}")
+plt.show()

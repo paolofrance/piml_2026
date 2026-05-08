@@ -257,3 +257,64 @@ ax3.legend(fontsize=9); ax3.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
+
+# ---------------------------------------------------------------------------
+# Animation — mass-spring physical view
+# ---------------------------------------------------------------------------
+from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
+
+_s = max(1, len(t_eval) // 200)
+_ta = t_eval[::_s]
+_xd = {"True": x_true[::_s], "PINN-ID": x_pinn_id[::_s], "NN": x_nn[::_s]}
+_nf = len(_ta)
+_rows = {"True": 2.0, "PINN-ID": 1.0, "NN": 0.0}
+_WX, _R = -1.7, 0.10
+
+def _sp1d(x0, x1, y, n=8, a=0.04):
+    N = n*2+2; xs = np.linspace(x0, x1, N); ys = np.full(N, y, dtype=float)
+    ys[1:-1:2] += a; ys[2:-1:2] -= a; return xs, ys
+
+fig_a, (ax_ph, ax_tr) = plt.subplots(1, 2, figsize=(13, 5))
+fig_a.suptitle(
+    f"PINN-ID vs NN — MCK  (δ_true={DELTA_TRUE}, δ_id={delta_identified:.3f})",
+    fontsize=11)
+ax_ph.set_xlim(-2.1, 1.6); ax_ph.set_ylim(-0.5, 2.6)
+ax_ph.set_aspect("equal"); ax_ph.axis("off")
+ax_ph.vlines(_WX, -0.3, 2.6, colors="k", lw=4)
+for nm, y in _rows.items():
+    ax_ph.text(_WX-0.07, y, nm, ha="right", va="center",
+               color=COLORS[nm], fontsize=9, fontweight="bold")
+_spL, _bob = {}, {}
+for nm, y in _rows.items():
+    _spL[nm], = ax_ph.plot(*_sp1d(_WX, 0, y), color=COLORS[nm], lw=1.5)
+    _bob[nm], = ax_ph.plot([], [], 'o', color=COLORS[nm], ms=14, zorder=5)
+_ttx = ax_ph.text(0.98, 0.02, "", transform=ax_ph.transAxes,
+                  ha="right", va="bottom", fontsize=9, color="gray")
+
+_ylo = min(x_true.min(), x_pinn_id.min(), x_nn.min()) - 0.05
+_yhi = max(x_true.max(), x_pinn_id.max(), x_nn.max()) + 0.05
+ax_tr.set_xlim(t_eval[0], t_eval[-1]); ax_tr.set_ylim(_ylo, _yhi)
+ax_tr.set_xlabel("t (s)"); ax_tr.set_ylabel("x(t)"); ax_tr.grid(True, alpha=0.3)
+ax_tr.axvline(T_TRAIN[1], color="gray", ls=":", lw=1.2)
+ax_tr.plot(t_eval, x_true,    color=COLORS["True"],    lw=1,   ls="--", label="True")
+ax_tr.plot(t_eval, x_pinn_id, color=COLORS["PINN-ID"], lw=1.5, label="PINN-ID")
+ax_tr.plot(t_eval, x_nn,      color=COLORS["NN"],      lw=1.5, label="NN")
+ax_tr.legend(fontsize=8)
+_cur, = ax_tr.plot([], [], color="k", lw=1.2, zorder=10)
+
+def _upd(i):
+    for nm, y in _rows.items():
+        xv = float(np.clip(_xd[nm][i], -1.6, 1.5))
+        _spL[nm].set_data(*_sp1d(_WX, xv-_R, y))
+        _bob[nm].set_data([xv], [y])
+    _cur.set_data([_ta[i], _ta[i]], [_ylo, _yhi])
+    _ttx.set_text(f"t={_ta[i]:.3f} s")
+
+_anim = FuncAnimation(fig_a, _upd, frames=_nf, interval=40, blit=False)
+_ap = os.path.join(RESULTS_DIR, "pinn_identification_anim.mp4")
+try:
+    _anim.save(_ap, writer=FFMpegWriter(fps=25, bitrate=1800))
+except Exception:
+    _ap = _ap.replace(".mp4", ".gif"); _anim.save(_ap, writer=PillowWriter(fps=20))
+print(f"Saved: {_ap}")
+plt.show()

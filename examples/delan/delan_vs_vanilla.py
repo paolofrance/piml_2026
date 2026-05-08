@@ -163,8 +163,77 @@ ax.set_xlabel("Time (s)", fontsize=11)
 ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
-# p = os.path.join(RESULTS_DIR, "delan_vs_vanilla.png")
-# plt.savefig(p, dpi=150, bbox_inches="tight"); plt.close()
-# print(f"\nSaved: {p}")
-plt.plot()
+plt.show()
+
+# ---------------------------------------------------------------------------
+# Animation — spring-pendulum orbital view
+# ---------------------------------------------------------------------------
+from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
+
+_s = max(1, len(t_eval) // 200)
+_ta  = t_eval[::_s]
+_nf  = len(_ta)
+_pnames = ["True", "DeLaN", "VanillaNN"]
+_xyd = {"True": xy_true[::_s]}
+for nm in ["DeLaN", "VanillaNN"]:
+    _xyd[nm] = np.clip(preds[nm]["xy"][::_s], -5, 5)
+_TRAIL = 30   # trail length in frames
+
+def _sp2d(ox, oy, bx, by, n=7, af=0.09):
+    dx, dy = bx-ox, by-oy
+    L = np.sqrt(dx**2+dy**2)+1e-10
+    amp = af*L; px, py = -dy/L, dx/L
+    N = n*2+2; t = np.linspace(0,1,N)
+    xs = ox+dx*t; ys = oy+dy*t
+    off = np.zeros(N)
+    off[1:-1:2] = amp; off[2:-1:2] = -amp
+    return xs+off*px, ys+off*py
+
+fig_a, (ax_ph, ax_tr) = plt.subplots(1, 2, figsize=(13, 6))
+fig_a.suptitle("DeLaN vs VanillaNN — spring pendulum orbital motion", fontsize=11)
+
+_lim = 1.8
+ax_ph.set_xlim(-_lim, _lim); ax_ph.set_ylim(-_lim*1.2, 0.3)
+ax_ph.set_aspect("equal"); ax_ph.axis("off")
+ax_ph.plot(0, 0, 'k+', ms=10, mew=2, zorder=10)
+
+_springs, _bobs, _trails = {}, {}, {}
+for nm in _pnames:
+    sp, = ax_ph.plot([], [], '-', color=COLORS[nm], lw=1.4)
+    bob, = ax_ph.plot([], [], 'o', color=COLORS[nm],
+                      ms=(11 if nm=="True" else 9),
+                      markeredgecolor="white", markeredgewidth=0.5, zorder=6)
+    trail, = ax_ph.plot([], [], '-', color=COLORS[nm], lw=0.8, alpha=0.4, zorder=2)
+    _springs[nm]=sp; _bobs[nm]=bob; _trails[nm]=trail
+_leg_h = [ax_ph.plot([], [], '-', color=COLORS[nm], label=nm)[0] for nm in _pnames]
+ax_ph.legend(handles=_leg_h, fontsize=8, loc="lower right")
+_ttx = ax_ph.text(0.02, 0.98, "", transform=ax_ph.transAxes,
+                  ha="left", va="top", fontsize=9, color="gray")
+
+ax_tr.set_xlim(t_eval[0], t_eval[-1]); ax_tr.grid(True, alpha=0.3)
+ax_tr.set_xlabel("t (s)"); ax_tr.set_ylabel("x (m)"); ax_tr.axvline(split, color="gray", ls=":", lw=1.2)
+ax_tr.plot(t_eval, xy_true[:,0], color=COLORS["True"], lw=1, ls="--", label="True")
+for nm in ["DeLaN", "VanillaNN"]:
+    ax_tr.plot(t_eval, np.clip(preds[nm]["xy"][:,0],-5,5),
+               color=COLORS[nm], lw=1.5, label=nm)
+ax_tr.legend(fontsize=8)
+_cur, = ax_tr.plot([], [], color="k", lw=1.2, zorder=10)
+
+def _upd(i):
+    t0 = max(0, i-_TRAIL)
+    for nm in _pnames:
+        bx, by = _xyd[nm][i,0], _xyd[nm][i,1]
+        _springs[nm].set_data(*_sp2d(0, 0, bx, by))
+        _bobs[nm].set_data([bx], [by])
+        _trails[nm].set_data(_xyd[nm][t0:i+1,0], _xyd[nm][t0:i+1,1])
+    _cur.set_data([_ta[i], _ta[i]], ax_tr.get_ylim())
+    _ttx.set_text(f"t={_ta[i]:.2f} s")
+
+_anim = FuncAnimation(fig_a, _upd, frames=_nf, interval=40, blit=False)
+_ap = os.path.join(RESULTS_DIR, "delan_vs_vanilla_anim.mp4")
+try:
+    _anim.save(_ap, writer=FFMpegWriter(fps=25, bitrate=1800))
+except Exception:
+    _ap = _ap.replace(".mp4", ".gif"); _anim.save(_ap, writer=PillowWriter(fps=20))
+print(f"Saved: {_ap}")
 plt.show()

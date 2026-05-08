@@ -6,37 +6,65 @@ Lecture materials comparing three families of physics-aware neural networks agai
 
 ```
 pinn_2026/
-├── pinn/               Physics-Informed Neural Networks
-│   ├── README.md
-│   ├── pinn_vs_nn.py              damped mass-spring-damper (MCK) (known params)
-│   ├── pinn_identification.py     damped MCK — unknown δ (system ID)
-│   ├── pinn_cooling.py            Newton's law of cooling (known R + ID)
-│   └── pinn_2dof_spring_damper.py 2-DOF mass-spring-damper
+├── examples/           Worked examples — presented during the lecture
+│   ├── pinn/
+│   │   ├── README.md
+│   │   ├── pinn_cooling.py            Newton's law of cooling (1st-order ODE)
+│   │   └── pinn_vs_nn.py              damped mass-spring-damper (2nd-order ODE)
+│   ├── lnn/
+│   │   ├── README.md
+│   │   └── lnn_vs_vanilla.py          simple pendulum, conservative
+│   └── delan/
+│       ├── README.md
+│       └── delan_vs_vanilla.py        spring pendulum 2-DOF, conservative
 │
-├── lnn/                Lagrangian Neural Networks
+├── excercises/         Student exercises — completed after the lecture
 │   ├── README.md
-│   ├── lnn_vs_vanilla.py          simple pendulum, conservative
-│   └── lnn_friction.py            simple pendulum, dissipative (LNN-F)
-│
-├── delan/              Deep Lagrangian Networks
-│   ├── README.md
-│   ├── delan_vs_vanilla.py        spring pendulum 2-DOF, conservative
-│   ├── delan_friction.py          spring pendulum 2-DOF, dissipative (DeLaN-F)
-│   └── delan_friction_pendulum.py simple pendulum 1-DOF, dissipative (DeLaN-F)
+│   ├── pinn/
+│   │   ├── pinn_identification.py     PINN for parameter identification
+│   │   ├── pinn_2dof_spring_damper.py PINN on a 2-DOF coupled system
+│   │   └── pinn_multi_traj.py         PINN generalising across initial conditions
+│   ├── lnn/
+│   │   └── lnn_friction.py            LNN extended to dissipative systems
+│   └── delan/
+│       ├── delan_friction_pendulum.py DeLaN-F on the simple pendulum (1-DOF)
+│       └── delan_friction.py          DeLaN-F on the spring pendulum (2-DOF)
 │
 ├── models/             Reusable model classes
-│   ├── lnn.py                     LNN (arbitrary n_dof)
-│   ├── delan.py                   DeLaN (arbitrary n_dof, SPD mass + softplus V)
-│   └── vanilla_nn.py              VanillaNN baseline
+│   ├── lnn.py                         LNN (arbitrary n_dof)
+│   ├── delan.py                       DeLaN (arbitrary n_dof, SPD mass + softplus V)
+│   └── vanilla_nn.py                  VanillaNN baseline
 │
 ├── systems/            Ground-truth dynamical systems
-│   ├── mass_spring_damper.py     damped MCK — analytic solution
-│   ├── pendulum.py                simple pendulum — scipy RK45
-│   └── spring_pendulum.py         spring pendulum 2-DOF — scipy RK45
+│   ├── mass_spring_damper.py          damped MCK — analytic solution
+│   ├── pendulum.py                    simple pendulum — scipy RK45
+│   └── spring_pendulum.py             spring pendulum 2-DOF — scipy RK45
 │
 └── utils/
-    └── training.py                train_dynamics_model() for LNN/DeLaN/VanillaNN
+    └── training.py                    train_dynamics_model() for LNN/DeLaN/VanillaNN
 ```
+
+## Lecture structure
+
+**Lecture 1 — Physics-Informed Neural Networks (PINN)**
+
+| | Script | Topic |
+|---|---|---|
+| Example 1 | `examples/pinn/pinn_cooling.py` | 1st-order ODE, core concept with minimal setup |
+| Example 2 | `examples/pinn/pinn_vs_nn.py` | 2nd-order ODE, extrapolation vs plain NN |
+| Exercise 1 | `excercises/pinn/pinn_identification.py` | Use physics loss for parameter estimation |
+| Exercise 2 | `excercises/pinn/pinn_2dof_spring_damper.py` | Scale to a multi-DOF system |
+| Exercise 3 | `excercises/pinn/pinn_multi_traj.py` | Generalise across initial conditions |
+
+**Lecture 2 — Structure-preserving networks (Lagrangian)**
+
+| | Script | Topic |
+|---|---|---|
+| Example A | `examples/lnn/lnn_vs_vanilla.py` | LNN: scalar Lagrangian + Euler-Lagrange autograd |
+| Example B | `examples/delan/delan_vs_vanilla.py` | DeLaN: structured mass matrix, multi-DOF |
+| Exercise 1 | `excercises/lnn/lnn_friction.py` | Extend LNN to non-conservative systems |
+| Exercise 2 | `excercises/delan/delan_friction_pendulum.py` | DeLaN-F on a familiar 1-DOF system |
+| Exercise 3 | `excercises/delan/delan_friction.py` | DeLaN-F on the full 2-DOF system |
 
 ## Methods at a glance
 
@@ -58,23 +86,29 @@ LNN learns an unstructured scalar Lagrangian — energy conservation emerges but
 **Conservative vs dissipative extensions:**
 Both LNN and DeLaN assume a conservative Lagrangian by default. Adding a Rayleigh dissipation network `B(q)` (PSD via Cholesky) extends them to dissipative systems while preserving the guarantee that `dE/dt ≤ 0`.
 
-## Running the experiments
+## Running the examples
 
 ```bash
-# PINN
-python pinn/pinn_vs_nn.py
-python pinn/pinn_identification.py
-python pinn/pinn_cooling.py
-python pinn/pinn_2dof_spring_damper.py
+# Lecture 1 — PINN
+python examples/pinn/pinn_cooling.py
+python examples/pinn/pinn_vs_nn.py
 
-# LNN
-python lnn/lnn_vs_vanilla.py
-python lnn/lnn_friction.py
+# Lecture 2 — Lagrangian networks
+python examples/lnn/lnn_vs_vanilla.py
+python examples/delan/delan_vs_vanilla.py
+```
 
-# DeLaN
-python delan/delan_vs_vanilla.py
-python delan/delan_friction.py
-python delan/delan_friction_pendulum.py
+## Running the exercises
+
+```bash
+python excercises/pinn/pinn_identification.py
+python excercises/pinn/pinn_2dof_spring_damper.py
+python excercises/pinn/pinn_multi_traj.py --n_train 10
+
+python excercises/lnn/lnn_friction.py
+
+python excercises/delan/delan_friction_pendulum.py
+python excercises/delan/delan_friction.py
 ```
 
 **Dependencies:** `torch`, `numpy`, `matplotlib`, `scipy`

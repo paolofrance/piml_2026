@@ -58,9 +58,9 @@ M(q, q̇) q̈ = ∂L/∂q − C(q, q̇) q̇ − B(q) q̇
 
 ---
 
-## Experiments
+## Example
 
-### 1. `lnn_vs_vanilla.py` — Simple pendulum, conservative (data-scarce regime)
+### `lnn_vs_vanilla.py` — Simple pendulum, conservative (data-scarce regime)
 
 **System:** `θ̈ = −(g/L) sin(θ)`  (g=9.81, L=1)
 
@@ -70,33 +70,25 @@ M(q, q̇) q̈ = ∂L/∂q − C(q, q̇) q̇ − B(q) q̇
 - `LNN`       — Lagrangian network, energy conserved by construction
 - `VanillaNN` — unstructured `(θ, θ̇) → θ̈` regression
 
-**Key result:** with only 20 data points from a near-separatrix trajectory, VanillaNN fails to generalise (extrap RMSE ~0.65). LNN's Lagrangian structure constrains the rollout to stay on the correct energy shell far beyond the training window (~48× lower extrap RMSE). The energy plot shows VanillaNN drifting while LNN maintains a flat energy curve.
-
----
-
-### 2. `lnn_friction.py` — Simple pendulum, dissipative
-
-**System:** `θ̈ = −(g/L) sin(θ) − b θ̇`  (b=0.3 — viscous friction)
-
-**Setup:** same 20-point data-scarce regime. The system now dissipates energy, so a conservative model is structurally wrong even if it fits the training data well.
-
-**Models:**
-- `LNN-F`     — LNN + learnable Rayleigh dissipation coefficient b(θ) > 0
-- `LNN`       — standard conservative LNN (wrong model for this system)
-- `VanillaNN` — unstructured baseline
-
-**Key result:** Conservative LNN maintains constant energy (physically wrong for a dissipative system) and its rollout diverges from the ground truth as soon as the amplitude should be shrinking. LNN-F correctly models the energy decay and tracks the damped oscillation. VanillaNN has no structure to distinguish conservative from dissipative behaviour.
-
-The energy panel is the most diagnostic: ground truth shows monotone decay, LNN shows a flat line, VanillaNN is erratic, LNN-F follows the decay.
+**Key result:** with only 20 data points from a near-separatrix trajectory, VanillaNN fails to generalise. LNN's Lagrangian structure constrains the rollout to stay on the correct energy shell far beyond the training window. The energy plot is the decisive diagnostic: VanillaNN drifts, LNN stays flat.
 
 ---
 
 ## How to run
 
+From the repo root:
+
 ```bash
-python lnn/lnn_vs_vanilla.py
-python lnn/lnn_friction.py
+python examples/lnn/lnn_vs_vanilla.py
 ```
 
 Dependencies: `torch`, `numpy`, `matplotlib`, `scipy`.
-The scripts import from `models/`, `systems/`, and `utils/` at the repo root.
+Scripts import from `models/`, `systems/`, and `utils/` at the repo root.
+
+## Exercise
+
+The following script extends this example — see `excercises/lnn/`:
+
+| Exercise | Script | Extension |
+|---|---|---|
+| 1 | `lnn_friction.py` | Add a Rayleigh dissipation term to handle non-conservative systems |

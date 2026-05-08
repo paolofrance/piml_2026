@@ -283,3 +283,75 @@ ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
+
+# ---------------------------------------------------------------------------
+# Animation — 2-DOF mass-spring physical view
+# ---------------------------------------------------------------------------
+from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
+
+_s = max(1, len(t_eval) // 200)
+_ta   = t_eval[::_s]
+_x1d  = {"True": x_true[::_s,0], "PINN": x_pinn[::_s,0], "NN": x_nn[::_s,0]}
+_x2d  = {"True": x_true[::_s,1], "PINN": x_pinn[::_s,1], "NN": x_nn[::_s,1]}
+_nf   = len(_ta)
+_rows = {"True": 2.0, "PINN": 1.0, "NN": 0.0}
+_WL, _WR = -2.0, 4.5   # left/right wall x
+_M1R, _M2R = 0.13, 0.13   # bob radii
+_M1X0, _M2X0 = 0.0, 2.5   # rest positions
+
+def _sp1d(x0, x1, y, n=8, a=0.04):
+    N = n*2+2; xs = np.linspace(x0, x1, N); ys = np.full(N, y, dtype=float)
+    ys[1:-1:2] += a; ys[2:-1:2] -= a; return xs, ys
+
+fig_a, (ax_ph, ax_tr) = plt.subplots(1, 2, figsize=(14, 5))
+fig_a.suptitle("PINN vs NN — 2-DOF MCK: mass positions  (True / PINN / NN)", fontsize=11)
+ax_ph.set_xlim(_WL-0.3, _WR+0.3); ax_ph.set_ylim(-0.5, 2.6)
+ax_ph.set_aspect("equal"); ax_ph.axis("off")
+ax_ph.vlines(_WL, -0.3, 2.6, colors="k", lw=4)
+ax_ph.vlines(_WR, -0.3, 2.6, colors="k", lw=4)
+for nm, y in _rows.items():
+    ax_ph.text(_WL-0.07, y, nm, ha="right", va="center",
+               color=COLORS[nm], fontsize=8, fontweight="bold")
+
+_sp1, _sp2, _sp3, _b1, _b2 = {}, {}, {}, {}, {}
+for nm, y in _rows.items():
+    c = COLORS[nm]
+    _sp1[nm], = ax_ph.plot(*_sp1d(_WL, _M1X0-_M1R, y, a=0.035), color=c, lw=1.4)
+    _sp2[nm], = ax_ph.plot(*_sp1d(_M1X0+_M1R, _M2X0-_M2R, y, a=0.035), color=c, lw=1.4)
+    _sp3[nm], = ax_ph.plot(*_sp1d(_M2X0+_M2R, _WR, y, a=0.035), color=c, lw=1.4)
+    _b1[nm],  = ax_ph.plot([], [], 'o', color=c, ms=11, zorder=5)
+    _b2[nm],  = ax_ph.plot([], [], 's', color=c, ms=11, zorder=5)
+_ttx = ax_ph.text(0.98, 0.02, "", transform=ax_ph.transAxes,
+                  ha="right", va="bottom", fontsize=9, color="gray")
+
+_ylo = -1.2; _yhi = 1.2
+ax_tr.set_xlim(t_eval[0], t_eval[-1]); ax_tr.set_ylim(_ylo, _yhi)
+ax_tr.set_xlabel("t (s)"); ax_tr.set_ylabel("displacement (m)"); ax_tr.grid(True, alpha=0.3)
+ax_tr.axvline(T_TRAIN[1], color="gray", ls=":", lw=1.2)
+for nm, xi, ls in [("True",x_true,"--"),("PINN",x_pinn,"-"),("NN",x_nn,"-")]:
+    ax_tr.plot(t_eval, xi[:,0], color=COLORS[nm], lw=1.5, ls=ls,
+               label=f"{nm} x₁" if nm=="True" else nm)
+    ax_tr.plot(t_eval, xi[:,1], color=COLORS[nm], lw=1, ls=":", alpha=0.6)
+ax_tr.legend(fontsize=7)
+_cur, = ax_tr.plot([], [], color="k", lw=1.2, zorder=10)
+
+def _upd(i):
+    for nm, y in _rows.items():
+        m1x = float(np.clip(_M1X0 + _x1d[nm][i], _WL+0.2, _WR-0.8))
+        m2x = float(np.clip(_M2X0 + _x2d[nm][i], _WL+0.6, _WR-0.2))
+        _sp1[nm].set_data(*_sp1d(_WL, m1x-_M1R, y, a=0.035))
+        _sp2[nm].set_data(*_sp1d(m1x+_M1R, m2x-_M2R, y, a=0.035))
+        _sp3[nm].set_data(*_sp1d(m2x+_M2R, _WR, y, a=0.035))
+        _b1[nm].set_data([m1x], [y])
+        _b2[nm].set_data([m2x], [y])
+    _cur.set_data([_ta[i], _ta[i]], [_ylo, _yhi])
+    _ttx.set_text(f"t={_ta[i]:.2f} s")
+
+_anim = FuncAnimation(fig_a, _upd, frames=_nf, interval=40, blit=False)
+_ap = os.path.join(RESULTS_DIR, "pinn_2dof_anim.mp4")
+try:
+    _anim.save(_ap, writer=FFMpegWriter(fps=25, bitrate=1800))
+except Exception:
+    _ap = _ap.replace(".mp4", ".gif"); _anim.save(_ap, writer=PillowWriter(fps=20))
+print(f"Saved: {_ap}")
+plt.show()

@@ -75,9 +75,9 @@ Same supervised protocol as LNN: minimise MSE on `(q, q̇, q̈)` tuples. Rollout
 
 ---
 
-## Experiments
+## Example
 
-### 1. `delan_vs_vanilla.py` — Spring pendulum (2-DOF, conservative)
+### `delan_vs_vanilla.py` — Spring pendulum (2-DOF, conservative)
 
 **System:** spring pendulum in polar coordinates `(r, θ)`:
 ```
@@ -89,57 +89,31 @@ r̈ = r θ̇² − g(1−cosθ) − 2k(r−r₀)
 **Setup:** 80 samples from `t ∈ [0, 3 s]`. Evaluation rollout over `[0, 8 s]` in Cartesian `(x, y)` coordinates.
 
 **Models:**
-- `DeLaN`     — structured L=T−V with SPD mass matrix
+- `DeLaN`     — structured L=T−V with SPD mass matrix (Cholesky) and non-negative potential (softplus)
 - `VanillaNN` — unstructured `(q, q̇) → q̈` regression
 
-**Key result:** with 80 training points on a 2-DOF nonlinear system, VanillaNN fails to generalise — its energy drifts by ~54% causing the trajectory to diverge. DeLaN's energy conservation structure keeps the rollout on the correct orbit.
+**Key result:** with 80 training points on a 2-DOF nonlinear system, VanillaNN fails to generalise — its energy drifts by ~54% causing the trajectory to diverge from its orbit entirely. DeLaN's guaranteed energy conservation keeps the rollout on the correct orbit throughout the evaluation window.
 
----
-
-### 2. `delan_friction.py` — Spring pendulum (2-DOF, dissipative)
-
-**System:** spring pendulum with viscous friction:
-```
-r̈ = r θ̇² − g(1−cosθ) − 2k(r−r₀) − b_r ṙ
-θ̈ = (−g sinθ − 2ṙ θ̇) / r − b_θ θ̇
-```
-(b_r=0.1, b_θ=0.3)
-
-**Setup:** 80 samples from `t ∈ [0, 3 s]`, evaluation over `[0, 8 s]`.
-
-**Models:**
-- `DeLaN-F`   — DeLaN + learnable Rayleigh dissipation matrix B(q) (PSD via Cholesky)
-- `DeLaN`     — standard conservative DeLaN (wrong model for this system)
-- `VanillaNN` — unstructured baseline
-
-**Key result:** conservative DeLaN correctly captures Lagrangian structure but assumes energy conservation — it predicts undamped oscillations when the ground truth is decaying. DeLaN-F's B(q) matrix correctly absorbs the dissipation, tracking both the trajectory shape and the monotone energy decrease. The energy panel is the decisive diagnostic.
-
----
-
-### 3. `delan_friction_pendulum.py` — Simple pendulum (1-DOF, dissipative)
-
-**System:** `θ̈ = −(g/L) sin(θ) − b θ̇`  (b=0.3)
-
-**Setup:** 20 data-scarce samples from `t ∈ [0, 3 s]` with θ₀=2.5 rad. Evaluation over `[0, 12 s]`.
-
-This experiment uses DeLaN (not LNN) for a 1-DOF system, demonstrating that the more structured Cholesky mass matrix and softplus potential are valuable even at low dimensionality. For 1-DOF the Cholesky matrix reduces to a single positive scalar, so the structure adds no computational overhead.
-
-**Models:**
-- `DeLaN-F`   — DeLaN + friction (n_dof=1, B is a scalar > 0)
-- `DeLaN`     — conservative DeLaN (wrong model)
-- `VanillaNN` — unstructured baseline
-
-**Key result:** mirrors the 2-DOF result at lower dimensionality. Conservative DeLaN maintains flat energy while the ground truth decays. DeLaN-F correctly tracks the dissipation. VanillaNN fits training data but diverges in extrapolation.
+*Use after the LNN example: same Lagrangian idea, but now with explicit physical structure in the mass matrix and potential — stronger guarantees, multi-DOF system.*
 
 ---
 
 ## How to run
 
+From the repo root:
+
 ```bash
-python delan/delan_vs_vanilla.py
-python delan/delan_friction.py
-python delan/delan_friction_pendulum.py
+python examples/delan/delan_vs_vanilla.py
 ```
 
 Dependencies: `torch`, `numpy`, `matplotlib`, `scipy`.
-The scripts import from `models/`, `systems/`, and `utils/` at the repo root.
+Scripts import from `models/`, `systems/`, and `utils/` at the repo root.
+
+## Exercises
+
+The following scripts extend this example — see `excercises/delan/`:
+
+| Exercise | Script | Extension |
+|---|---|---|
+| 1 | `delan_friction_pendulum.py` | DeLaN-F on the simple pendulum (1-DOF) — familiar system, dissipation |
+| 2 | `delan_friction.py` | DeLaN-F on the spring pendulum (2-DOF) — full complexity |

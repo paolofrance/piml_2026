@@ -155,8 +155,71 @@ ax2.set_xlabel("Time (s)", fontsize=11)
 ax2.legend(fontsize=9); ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
-# p = os.path.join(RESULTS_DIR, "lnn_vs_vanilla.png")
-# plt.savefig(p, dpi=150, bbox_inches="tight"); plt.close()
-# print(f"\nSaved: {p}")
-plt.plot()
+plt.show()
+
+# ---------------------------------------------------------------------------
+# Animation — pendulum physical view
+# ---------------------------------------------------------------------------
+from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
+
+_L = pend.L
+_s = max(1, len(t_eval) // 200)
+_ta   = t_eval[::_s]
+_thd  = {"True": th_true[::_s],
+         "LNN":       preds["LNN"]["theta"][::_s],
+         "VanillaNN": preds["VanillaNN"]["theta"][::_s]}
+_nf = len(_ta)
+_pnames = ["True", "LNN", "VanillaNN"]
+
+fig_a, (ax_ph, ax_tr) = plt.subplots(1, 2, figsize=(13, 6))
+fig_a.suptitle("LNN vs VanillaNN — simple pendulum  (True / LNN / VanillaNN)", fontsize=11)
+
+ax_ph.set_xlim(-1.4*_L, 1.4*_L); ax_ph.set_ylim(-1.4*_L, 0.3*_L)
+ax_ph.set_aspect("equal"); ax_ph.axis("off")
+ax_ph.plot(0, 0, 'k+', ms=10, mew=2, zorder=10)
+_circ = plt.Circle((0,0), _L, color="lightgray", fill=False, ls="--", lw=0.8)
+ax_ph.add_patch(_circ)
+_rods, _bobs = {}, {}
+for nm in _pnames:
+    rod, = ax_ph.plot([], [], '-', color=COLORS[nm],
+                      lw=(2 if nm=="True" else 1.5),
+                      ls=("--" if nm=="True" else "-"), zorder=3)
+    bob, = ax_ph.plot([], [], 'o', color=COLORS[nm],
+                      ms=(10 if nm=="True" else 8),
+                      markeredgecolor="white", markeredgewidth=0.5, zorder=5)
+    _rods[nm] = rod; _bobs[nm] = bob
+_leg_ax = [ax_ph.plot([], [], '-', color=COLORS[nm], label=nm)[0] for nm in _pnames]
+ax_ph.legend(handles=_leg_ax, fontsize=8, loc="lower right")
+_ttx = ax_ph.text(0.02, 0.98, "", transform=ax_ph.transAxes,
+                  ha="left", va="top", fontsize=9, color="gray")
+
+_thlo = th_true.min() - 0.2; _thhi = th_true.max() + 0.2
+ax_tr.set_xlim(t_eval[0], t_eval[-1])
+ax_tr.set_ylim(np.clip(min(p["theta"].min() for p in preds.values())-0.3, -10, _thlo),
+               np.clip(max(p["theta"].max() for p in preds.values())+0.3, _thhi, 10))
+ax_tr.set_xlabel("t (s)"); ax_tr.set_ylabel("θ (rad)"); ax_tr.grid(True, alpha=0.3)
+ax_tr.axvline(split, color="gray", ls=":", lw=1.2)
+ax_tr.plot(t_eval, th_true, color=COLORS["True"], lw=1, ls="--", label="True")
+for nm in ["LNN", "VanillaNN"]:
+    ax_tr.plot(t_eval, np.clip(preds[nm]["theta"], -15, 15),
+               color=COLORS[nm], lw=1.5, label=nm)
+ax_tr.legend(fontsize=8)
+_cur, = ax_tr.plot([], [], color="k", lw=1.2, zorder=10)
+
+def _upd(i):
+    for nm in _pnames:
+        th = float(_thd[nm][i])
+        bx = _L * np.sin(th); by = -_L * np.cos(th)
+        _rods[nm].set_data([0, bx], [0, by])
+        _bobs[nm].set_data([bx], [by])
+    _cur.set_data([_ta[i], _ta[i]], ax_tr.get_ylim())
+    _ttx.set_text(f"t={_ta[i]:.2f} s")
+
+_anim = FuncAnimation(fig_a, _upd, frames=_nf, interval=40, blit=False)
+_ap = os.path.join(RESULTS_DIR, "lnn_vs_vanilla_anim.mp4")
+try:
+    _anim.save(_ap, writer=FFMpegWriter(fps=25, bitrate=1800))
+except Exception:
+    _ap = _ap.replace(".mp4", ".gif"); _anim.save(_ap, writer=PillowWriter(fps=20))
+print(f"Saved: {_ap}")
 plt.show()
