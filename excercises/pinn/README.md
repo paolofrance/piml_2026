@@ -63,10 +63,34 @@ python excercises/pinn/pinn_multi_traj.py --n_train 20 --seed 42
 
 ---
 
+---
+
+## Exercise 4 — `pinn_spring_pendulum.py` — 2-DOF spring pendulum
+
+**Extension:** apply a PINN to the same spring pendulum used in the LNN/DeLaN examples — the 2-DOF nonlinear system `(r, θ)`. This lets students directly compare the two approaches on identical data.
+
+**System:** `r̈ = r θ̇² − g(1−cosθ) − 2k(r−r₀)`,  `θ̈ = (−g sinθ − 2ṙ θ̇) / r`  (g=10, k=10, r₀=1)
+
+**Key contrast with LNN/DeLaN:**
+- PINN takes *position-only* observations (no velocity or acceleration needed).
+- PINN outputs the full trajectory `t → (r(t), θ(t))` from a single initial condition.
+- PINN has **no energy conservation guarantee** — unlike LNN/DeLaN, energy drift is expected during extrapolation.
+
+**Two ODE residuals (normalised for O(1) scale):**
+```
+R₁ = (r̈ − r θ̇² + g(1−cosθ) + 2k(r−r₀)) / (2k)
+R₂ = (θ̈ + (g sinθ + 2ṙ θ̇)/r) / (g/r₀)
+```
+
+**What to observe:** compare the energy panel of the PINN rollout to the DeLaN rollout on the same system. The PINN trajectory may be qualitatively reasonable within the training window but drifts in energy during extrapolation — illustrating what is lost when the Lagrangian structure is replaced by a soft physics penalty.
+
+---
+
 ## How to run
 
 ```bash
 python excercises/pinn/pinn_identification.py
 python excercises/pinn/pinn_2dof_spring_damper.py
 python excercises/pinn/pinn_multi_traj.py --n_train 10
+python excercises/pinn/pinn_spring_pendulum.py
 ```

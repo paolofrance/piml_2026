@@ -1,13 +1,13 @@
 """
-pinn_vs_nn.py
-=============
+pinn_vs_nn_mck.py
+=================
 PINN vs plain NN on the damped mass-spring-damper (MCK).
 
-System  : ẍ + 2δẋ + ω₀²x = 0   (δ=2, ω₀=20, underdamped)
-Data    : 10 observations from t ∈ [0, 0.36]  (first ~1 oscillation)
-Eval    : t ∈ [0, 1.0]           (extrapolation to t=1)
+System  : m·ẍ + c·ẋ + k·x = 0   (m=1 kg, c=4 N·s/m, k=400 N/m, underdamped)
+Data    : 10 observations from t ∈ [0, 0.36 s]  (first ~1 oscillation)
+Eval    : t ∈ [0, 1.0 s]          (extrapolation to t=1)
 
-PINN: trajectory model  t → x(t),  physics residual enforced over [0, 1].
+PINN: trajectory model  t → x(t),  physics residual enforced over [0, 1 s].
 NN  : same architecture, data fit only — no ODE knowledge.
 
 Key insight: PINN enforces the ODE everywhere in the eval domain, so it
@@ -38,11 +38,12 @@ COLORS = {"True": "#2c3e50", "PINN": "#3498db", "NN": "#e74c3c"}
 # ---------------------------------------------------------------------------
 
 class PINN(nn.Module):
-    """Trajectory PINN: t → x(t).  Residual: ẍ + 2δẋ + ω₀²x = 0."""
+    """Trajectory PINN: t → x(t).  Residual: m·ẍ + c·ẋ + k·x = 0."""
 
-    def __init__(self, delta, omega0, hidden_dim=64, n_layers=4, t_scale=1.0):
+    def __init__(self, m, c, k, hidden_dim=64, n_layers=4, t_scale=1.0):
         super().__init__()
-        self.delta, self.omega0, self.t_scale = delta, omega0, t_scale
+        self.m, self.c, self.k = m, c, k
+        self.t_scale = t_scale
         layers = [nn.Linear(1, hidden_dim), nn.Tanh()]
         for _ in range(n_layers - 1):
             layers += [nn.Linear(hidden_dim, hidden_dim), nn.Tanh()]
@@ -57,8 +58,8 @@ class PINN(nn.Module):
         x   = self.forward(t_r)
         xd  = torch.autograd.grad(x.sum(),  t_r, create_graph=True)[0]
         xdd = torch.autograd.grad(xd.sum(), t_r, create_graph=True)[0]
-        # Normalise by ω₀² so the residual is O(1) regardless of frequency
-        return (xdd + 2*self.delta*xd + self.omega0**2 * x) / self.omega0**2
+        # Normalise by k so the residual is O(1) regardless of stiffness
+        return (self.m * xdd + self.c * xd + self.k * x) / self.k
 
     def total_loss(self, t_obs, x_obs, t_c, w_data=1.0, w_phys=1.0):
         ld = ((self.forward(t_obs) - x_obs)**2).mean()
@@ -86,7 +87,8 @@ class TrajNN(nn.Module):
 # Data
 # ---------------------------------------------------------------------------
 
-mck      = MassSpringDamper(delta=2.0, omega0=20.0)
+M, C, K  = 1.0, 4.0, 400.0          # physical parameters (kg, N·s/m, N/m)
+mck      = MassSpringDamper(delta=C / (2*M), omega0=np.sqrt(K / M))
 T_TRAIN = (0.0, 0.36)
 T_EVAL  = (0.0, 1.0)
 N_TRAIN, N_EVAL = 10, 500
@@ -101,12 +103,13 @@ x_tr = torch.tensor(x_train[:, None], dtype=torch.float32, device=DEVICE)
 t_ev = torch.tensor(t_eval[:,  None], dtype=torch.float32, device=DEVICE)
 
 # ---------------------------------------------------------------------------
-# Train PINN  (two-phase: data warm-up → data + physics over full domain)
+# Train PINN  (data + physics from the start — normalisation by k keeps both
+#              loss terms O(1), so no warm-up phase is needed)
 # ---------------------------------------------------------------------------
 
-EPOCHS_PINN, WARMUP = 20_000, 3_000
+EPOCHS_PINN = 20_000
 
-pinn = PINN(mck.delta, mck.omega0, t_scale=T_EVAL[1]).to(DEVICE)
+pinn = PINN(M, C, K, t_scale=T_EVAL[1]).to(DEVICE)
 opt  = torch.optim.Adam(pinn.parameters(), lr=1e-3)
 sch  = torch.optim.lr_scheduler.MultiStepLR(
     opt, milestones=[int(EPOCHS_PINN*.5), int(EPOCHS_PINN*.8)], gamma=0.5)
@@ -114,12 +117,8 @@ sch  = torch.optim.lr_scheduler.MultiStepLR(
 print("Training PINN ...")
 for ep in range(1, EPOCHS_PINN + 1):
     opt.zero_grad()
-    if ep <= WARMUP:
-        loss = ((pinn(t_tr) - x_tr)**2).mean()
-        ld, lp = loss, torch.tensor(0.0)
-    else:
-        t_c = torch.rand(500, 1, device=DEVICE) * T_EVAL[1]
-        loss, ld, lp = pinn.total_loss(t_tr, x_tr, t_c, w_data=1.0, w_phys=1.0)
+    t_c = torch.rand(500, 1, device=DEVICE) * T_EVAL[1]
+    loss, ld, lp = pinn.total_loss(t_tr, x_tr, t_c, w_data=1.0, w_phys=1.0)
     loss.backward(); opt.step(); sch.step()
     if ep % 4000 == 0:
         print(f"  ep {ep:5d}  data={ld.item():.4e}  phys={lp.item():.4e}")
@@ -175,8 +174,9 @@ print(f"\nPINN extrap improvement over NN: {gain:.1f}×")
 # ---------------------------------------------------------------------------
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
-fig.suptitle("PINN vs plain NN — Damped Mass-Spring-Damper (MCK)\n"
-             "10 observations from [0, 0.36]  |  shaded = extrapolation",
+fig.suptitle(f"PINN vs plain NN — Damped Mass-Spring-Damper\n"
+             f"m={M} kg,  c={C} N·s/m,  k={K} N/m  |  "
+             f"{N_TRAIN} obs from [0, {T_TRAIN[1]} s]  |  shaded = extrapolation",
              fontsize=12, fontweight="bold")
 
 ax1.plot(t_eval, x_true,  color=COLORS["True"], lw=1, ls="--", label="Ground truth", zorder=5)
@@ -211,8 +211,9 @@ plt.show()
 _ind_preds = {"PINN": x_pinn, "NN": x_nn}
 for _name, _pred in _ind_preds.items():
     _fi, (_a1, _a2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
-    _fi.suptitle(f"{_name} — Damped Mass-Spring-Damper (MCK)\n"
-                 f"{N_TRAIN} observations from [0, {T_TRAIN[1]} s]  |  shaded = extrapolation",
+    _fi.suptitle(f"{_name} — Damped Mass-Spring-Damper\n"
+                 f"m={M} kg,  c={C} N·s/m,  k={K} N/m  |  "
+                 f"{N_TRAIN} obs from [0, {T_TRAIN[1]} s]  |  shaded = extrapolation",
                  fontsize=12, fontweight="bold")
     _a1.plot(t_eval, x_true, color=COLORS["True"], lw=1, ls="--", label="Ground truth", zorder=5)
     _a1.plot(t_eval, _pred,  color=COLORS[_name],  lw=1.8,
@@ -251,7 +252,7 @@ def _sp1d(x0, x1, y, n=8, a=0.04):
     ys[1:-1:2] += a; ys[2:-1:2] -= a; return xs, ys
 
 fig_a, (ax_ph, ax_tr) = plt.subplots(1, 2, figsize=(13, 5))
-fig_a.suptitle("PINN vs NN — MCK: mass displacement  (True / PINN / NN)", fontsize=11)
+fig_a.suptitle(f"PINN vs NN — m·ẍ + c·ẋ + k·x = 0  (m={M}, c={C}, k={K})  |  True / PINN / NN", fontsize=11)
 ax_ph.set_xlim(-2.1, 1.6); ax_ph.set_ylim(-0.5, 2.6)
 ax_ph.set_aspect("equal"); ax_ph.axis("off")
 ax_ph.vlines(_WX, -0.3, 2.6, colors="k", lw=4)

@@ -13,7 +13,8 @@ pinn_2026/
 │   │   └── pinn_vs_nn.py              damped mass-spring-damper (2nd-order ODE)
 │   ├── lnn/
 │   │   ├── README.md
-│   │   └── lnn_vs_vanilla.py          simple pendulum, conservative
+│   │   ├── lnn_vs_vanilla.py          simple pendulum, conservative
+│   │   └── lnn_vs_delan.py            spring pendulum 2-DOF: LNN vs DeLaN vs VanillaNN
 │   └── delan/
 │       ├── README.md
 │       └── delan_vs_vanilla.py        spring pendulum 2-DOF, conservative
@@ -23,7 +24,8 @@ pinn_2026/
 │   ├── pinn/
 │   │   ├── pinn_identification.py     PINN for parameter identification
 │   │   ├── pinn_2dof_spring_damper.py PINN on a 2-DOF coupled system
-│   │   └── pinn_multi_traj.py         PINN generalising across initial conditions
+│   │   ├── pinn_multi_traj.py         PINN generalising across initial conditions
+│   │   └── pinn_spring_pendulum.py    PINN on the 2-DOF spring pendulum (contrast with LNN/DeLaN)
 │   ├── lnn/
 │   │   └── lnn_friction.py            LNN extended to dissipative systems
 │   └── delan/
@@ -55,6 +57,7 @@ pinn_2026/
 | Exercise 1 | `excercises/pinn/pinn_identification.py` | Use physics loss for parameter estimation |
 | Exercise 2 | `excercises/pinn/pinn_2dof_spring_damper.py` | Scale to a multi-DOF system |
 | Exercise 3 | `excercises/pinn/pinn_multi_traj.py` | Generalise across initial conditions |
+| Exercise 4 | `excercises/pinn/pinn_spring_pendulum.py` | PINN on 2-DOF system — contrast with LNN/DeLaN |
 
 **Lecture 2 — Structure-preserving networks (Lagrangian)**
 
@@ -62,6 +65,7 @@ pinn_2026/
 |---|---|---|
 | Example A | `examples/lnn/lnn_vs_vanilla.py` | LNN: scalar Lagrangian + Euler-Lagrange autograd |
 | Example B | `examples/delan/delan_vs_vanilla.py` | DeLaN: structured mass matrix, multi-DOF |
+| Example C | `examples/lnn/lnn_vs_delan.py` | LNN vs DeLaN vs VanillaNN — 3-way comparison |
 | Exercise 1 | `excercises/lnn/lnn_friction.py` | Extend LNN to non-conservative systems |
 | Exercise 2 | `excercises/delan/delan_friction_pendulum.py` | DeLaN-F on a familiar 1-DOF system |
 | Exercise 3 | `excercises/delan/delan_friction.py` | DeLaN-F on the full 2-DOF system |
@@ -96,7 +100,10 @@ python examples/pinn/pinn_vs_nn.py
 # Lecture 2 — Lagrangian networks
 python examples/lnn/lnn_vs_vanilla.py
 python examples/delan/delan_vs_vanilla.py
+python examples/lnn/lnn_vs_delan.py
 ```
+
+Each example saves static figures and an animation to its own `results/` subfolder.
 
 ## Running the exercises
 

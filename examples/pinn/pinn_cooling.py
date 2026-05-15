@@ -258,7 +258,39 @@ ax.set_title("Cooling rate identification", fontsize=11, fontweight="bold")
 ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
+fig.savefig(os.path.join(RESULTS_DIR, "pinn_cooling.png"), dpi=150, bbox_inches="tight")
+print(f"Saved: {os.path.join(RESULTS_DIR, 'pinn_cooling.png')}")
 plt.show()
+
+# ---------------------------------------------------------------------------
+# Individual figures per model
+# ---------------------------------------------------------------------------
+
+_ind_preds = {"NN": T_nn, "PINN": T_pinn, "PINN-ID": T_id}
+for _name, _pred in _ind_preds.items():
+    _fi, (_a1, _a2) = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
+    _fi.suptitle(f"{_name} — Newton's Law of Cooling\n"
+                 f"T_env={T_ENV} °C,  T₀={T0} °C,  R={R} s⁻¹  |  shaded = extrapolation",
+                 fontsize=12, fontweight="bold")
+    _a1.plot(times, temps,  color=COLORS["True"],  lw=1, ls="--", label="Ground truth", zorder=5)
+    _a1.plot(times, _pred,  color=COLORS[_name],   lw=1.8, label=_name)
+    _a1.scatter(t_data, T_data, s=60, color=COLORS["True"], zorder=10,
+                edgecolors="white", linewidths=0.5, label="10 noisy obs (σ=2 °C)")
+    _a1.axvline(split, color="gray", ls=":", lw=1.4, label="train end")
+    _a1.axvspan(split, times[-1], alpha=0.07, color="gray")
+    _a1.set_ylabel("Temperature (°C)", fontsize=11)
+    _a1.legend(fontsize=9); _a1.grid(True, alpha=0.3)
+    _a2.semilogy(times, np.abs(_pred - temps) + 1e-3, color=COLORS[_name], lw=1.6, label=_name)
+    _a2.axvline(split, color="gray", ls=":", lw=1.4)
+    _a2.axvspan(split, times[-1], alpha=0.07, color="gray")
+    _a2.set_ylabel("|T error| °C  (log)", fontsize=11)
+    _a2.set_xlabel("Time (s)", fontsize=11)
+    _a2.legend(fontsize=9); _a2.grid(True, alpha=0.3)
+    plt.tight_layout()
+    _fp = os.path.join(RESULTS_DIR, f"pinn_cooling_{_name.replace('-', '_')}.png")
+    _fi.savefig(_fp, dpi=150, bbox_inches="tight")
+    print(f"Saved: {_fp}")
+    plt.close(_fi)
 
 # ---------------------------------------------------------------------------
 # Animation — thermometer bars + growing temperature curves
@@ -298,9 +330,9 @@ ax_tr.set_xlabel("t (s)"); ax_tr.set_ylabel("T(t) (°C)"); ax_tr.grid(True, alph
 ax_tr.axvline(300, color="gray", ls=":", lw=1.2, label="train end")
 ax_tr.scatter(t_data, T_data, s=50, color=COLORS["True"], zorder=10,
               edgecolors="white", linewidths=0.5, label="obs")
+_full = {"True": temps, "NN": T_nn, "PINN": T_pinn, "PINN-ID": T_id}
 for nm in _names:
-    ax_tr.plot(times, _Td[nm]*(_s if False else 1), color=COLORS[nm],
-               lw=1, ls="--", alpha=0.3)
+    ax_tr.plot(times, _full[nm], color=COLORS[nm], lw=1, ls="--", alpha=0.3)
 _growL = {}
 for nm in _names:
     ln, = ax_tr.plot([], [], color=COLORS[nm], lw=2, label=nm)

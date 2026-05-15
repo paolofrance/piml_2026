@@ -24,7 +24,7 @@ import torch
 # matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from systems import SimplePendulum
 from models import LNN, VanillaNN
 from utils.training import train_dynamics_model
@@ -155,7 +155,38 @@ ax2.set_xlabel("Time (s)", fontsize=11)
 ax2.legend(fontsize=9); ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
+fig.savefig(os.path.join(RESULTS_DIR, "lnn_vs_vanilla.png"), dpi=150, bbox_inches="tight")
+print(f"Saved: {os.path.join(RESULTS_DIR, 'lnn_vs_vanilla.png')}")
 plt.show()
+
+# ---------------------------------------------------------------------------
+# Individual figures per model
+# ---------------------------------------------------------------------------
+
+for _name in ["LNN", "VanillaNN"]:
+    _p = preds[_name]
+    _fi, (_a1, _a2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
+    _fi.suptitle(f"{_name} — Simple Pendulum  (θ₀=2.5 rad, near-separatrix)\n"
+                 f"{N_TRAIN} training pts from [0, {T_TRAIN[1]} s]  |  shaded = extrapolation",
+                 fontsize=12, fontweight="bold")
+    _a1.plot(t_eval, th_true, color=COLORS["True"], lw=1, ls="--", label="Ground truth", zorder=5)
+    _a1.plot(t_eval, np.clip(_p["theta"], -15, 15), color=COLORS[_name], lw=1.8,
+             label=f"{_name}  (extrap RMSE={_p['extrap']:.4f})")
+    _a1.axvline(split, color="gray", ls=":", lw=1.4, label="train end")
+    _a1.axvspan(split, t_eval[-1], alpha=0.07, color="gray")
+    _a1.set_ylabel("θ (rad)", fontsize=11); _a1.legend(fontsize=9); _a1.grid(True, alpha=0.3)
+    _err = np.abs(np.clip(_p["theta"], -50, 50) - th_true)
+    _a2.semilogy(t_eval, _err + 1e-6, color=COLORS[_name], lw=1.6, label=_name)
+    _a2.axvline(split, color="gray", ls=":", lw=1.4)
+    _a2.axvspan(split, t_eval[-1], alpha=0.07, color="gray")
+    _a2.set_ylabel("|error|  (log scale)", fontsize=11)
+    _a2.set_xlabel("Time (s)", fontsize=11)
+    _a2.legend(fontsize=9); _a2.grid(True, alpha=0.3)
+    plt.tight_layout()
+    _fp = os.path.join(RESULTS_DIR, f"lnn_vs_vanilla_{_name}.png")
+    _fi.savefig(_fp, dpi=150, bbox_inches="tight")
+    print(f"Saved: {_fp}")
+    plt.close(_fi)
 
 # ---------------------------------------------------------------------------
 # Animation — pendulum physical view

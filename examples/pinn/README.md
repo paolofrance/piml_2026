@@ -109,6 +109,15 @@ python examples/pinn/pinn_vs_nn.py
 
 Dependencies: `torch`, `numpy`, `matplotlib`, `scipy`.
 
+## Outputs
+
+All figures and animations are saved to `examples/pinn/results/`.
+
+| Script | Saved files |
+|---|---|
+| `pinn_cooling.py` | `pinn_cooling.png` (3-panel comparison), `pinn_cooling_NN.png`, `pinn_cooling_PINN.png`, `pinn_cooling_PINN_ID.png`, `pinn_cooling_anim.mp4` |
+| `pinn_vs_nn.py` | `pinn_vs_nn.png` (2-panel comparison), `pinn_vs_nn_PINN.png`, `pinn_vs_nn_NN.png`, `pinn_vs_nn_anim.mp4` |
+
 ## Exercises
 
 The following scripts extend these ideas — see `excercises/pinn/`:

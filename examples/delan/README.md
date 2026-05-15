@@ -109,6 +109,14 @@ python examples/delan/delan_vs_vanilla.py
 Dependencies: `torch`, `numpy`, `matplotlib`, `scipy`.
 Scripts import from `models/`, `systems/`, and `utils/` at the repo root.
 
+## Outputs
+
+All figures and animations are saved to `examples/delan/results/`.
+
+| Script | Saved files |
+|---|---|
+| `delan_vs_vanilla.py` | `delan_vs_vanilla.png` (3-panel comparison), `delan_vs_vanilla_DeLaN.png`, `delan_vs_vanilla_VanillaNN.png`, `delan_vs_vanilla_anim.mp4` |
+
 ## Exercises
 
 The following scripts extend this example — see `excercises/delan/`:

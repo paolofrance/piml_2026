@@ -31,7 +31,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from systems import SpringPendulum
 from models import DeLaN, VanillaNN
 from utils.training import train_dynamics_model

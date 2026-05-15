@@ -58,7 +58,7 @@ M(q, q̇) q̈ = ∂L/∂q − C(q, q̇) q̇ − B(q) q̇
 
 ---
 
-## Example
+## Examples
 
 ### `lnn_vs_vanilla.py` — Simple pendulum, conservative (data-scarce regime)
 
@@ -74,20 +74,47 @@ M(q, q̇) q̈ = ∂L/∂q − C(q, q̇) q̇ − B(q) q̇
 
 ---
 
+### `lnn_vs_delan.py` — Spring pendulum 2-DOF: LNN vs DeLaN vs VanillaNN
+
+**System:** spring pendulum in polar coordinates `(r, θ)` — same system as `examples/delan/delan_vs_vanilla.py`.
+
+**Setup:** 80 samples from `t ∈ [0, 3 s]`. Evaluation rollout over `[0, 8 s]` in Cartesian `(x, y)`.
+
+**Models:**
+- `DeLaN`     — SPD mass matrix (Cholesky) + non-negative potential (softplus)
+- `LNN`       — unstructured scalar Lagrangian
+- `VanillaNN` — unstructured `(q, q̇) → q̈` regression
+
+**Key result:** all three models achieve comparable interpolation accuracy. In extrapolation, both Lagrangian methods outperform VanillaNN. DeLaN further outperforms the vanilla LNN — the guaranteed positive-definiteness of its mass matrix prevents the numerical instabilities that arise when the LNN's implicit mass matrix becomes near-singular on the coupled 2-DOF system. The energy panel makes the hierarchy explicit: DeLaN < LNN < VanillaNN in energy drift.
+
+*Use after `lnn_vs_vanilla.py` and `delan_vs_vanilla.py`: shows directly where the extra structure of DeLaN pays off.*
+
+---
+
 ## How to run
 
 From the repo root:
 
 ```bash
 python examples/lnn/lnn_vs_vanilla.py
+python examples/lnn/lnn_vs_delan.py
 ```
 
 Dependencies: `torch`, `numpy`, `matplotlib`, `scipy`.
 Scripts import from `models/`, `systems/`, and `utils/` at the repo root.
 
+## Outputs
+
+All figures and animations are saved to `examples/lnn/results/`.
+
+| Script | Saved files |
+|---|---|
+| `lnn_vs_vanilla.py` | `lnn_vs_vanilla.png` (2-panel comparison), `lnn_vs_vanilla_LNN.png`, `lnn_vs_vanilla_VanillaNN.png`, `lnn_vs_vanilla_anim.mp4` |
+| `lnn_vs_delan.py` | `lnn_vs_delan.png` (3-panel comparison), `lnn_vs_delan_DeLaN.png`, `lnn_vs_delan_LNN.png`, `lnn_vs_delan_VanillaNN.png`, `lnn_vs_delan_anim.mp4` |
+
 ## Exercise
 
-The following script extends this example — see `excercises/lnn/`:
+The following script extends these examples — see `excercises/lnn/`:
 
 | Exercise | Script | Extension |
 |---|---|---|

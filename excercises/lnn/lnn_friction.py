@@ -42,7 +42,7 @@ import torch.nn.functional as F_func
 import matplotlib.pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from systems import SimplePendulum
 from models import LNN, VanillaNN
 from utils.training import train_dynamics_model

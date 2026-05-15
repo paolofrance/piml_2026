@@ -22,7 +22,7 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from systems import MassSpringDamper
 
 SEED   = 0

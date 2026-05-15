@@ -34,7 +34,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from systems import MassSpringDamper
 
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
