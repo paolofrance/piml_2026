@@ -1,25 +1,35 @@
 # PINN Exercises
 
-Three exercises extending `examples/pinn/pinn_vs_nn.py`.
+Four exercises extending `examples/pinn/pinn_vs_nn_mck.py`.
 
 ---
 
 ## Exercise 1 — `pinn_identification.py` — Parameter identification
 
-**Extension:** the damping coefficient δ is unknown. Make it a learnable `nn.Parameter` and let the ODE residual drive its identification — no extra supervision needed.
+**Extension:** the damping coefficient c is unknown. Two PINN-ID variants are compared against a plain NN:
 
-**System:** `ẍ + 2δẋ + ω₀²x = 0`  (δ=2 unknown, ω₀=20)
+| Variant | Parameterisation | Positivity guaranteed? |
+|---|---|---|
+| PINN-ID (raw) | `self.c = nn.Parameter(c_init)` | No — can go negative |
+| PINN-ID (softplus) | `self.c = softplus(raw_c)` | Yes — `c ≥ 0` always |
 
-**Key implementation detail:** use log-parameterisation to keep δ strictly positive:
+**System:** `m·ẍ + c·ẋ + k·x = 0`  (m=1 kg, k=400 N/m known; c=4 N·s/m unknown, init=1)
+
+**Softplus parameterisation:**
 ```python
-self.log_delta = nn.Parameter(torch.tensor(np.log(delta_init)))
+self.raw_c = nn.Parameter(torch.tensor(np.log(np.exp(c_init) - 1.0)))
 
 @property
-def delta(self):
-    return torch.exp(self.log_delta)
+def c(self):
+    return F.softplus(self.raw_c)   # log(1 + exp(raw_c)) ≥ 0
 ```
 
-**What to observe:** δ stays near its initial value during the warm-up phase (data loss only has no gradient signal for it), then converges once the physics loss is switched on. This shows that the ODE residual is the sole identification signal.
+Residual normalised by k: `(m·ẍ + c·ẋ + k·x) / k`.
+
+**What to observe:**
+- During warm-up (data loss only) c receives no gradient and stays flat — the ODE residual is the sole identification signal.
+- The raw variant can drift to negative c if initialised poorly or if the warm-up is too short.
+- Softplus keeps c non-negative throughout, giving a smoother convergence curve.
 
 ---
 

@@ -22,7 +22,7 @@ pinn_2026/
 ├── excercises/         Student exercises — completed after the lecture
 │   ├── README.md
 │   ├── pinn/
-│   │   ├── pinn_identification.py     PINN for parameter identification
+│   │   ├── pinn_identification.py     PINN parameter identification (raw vs softplus c)
 │   │   ├── pinn_2dof_spring_damper.py PINN on a 2-DOF coupled system
 │   │   ├── pinn_multi_traj.py         PINN generalising across initial conditions
 │   │   └── pinn_spring_pendulum.py    PINN on the 2-DOF spring pendulum (contrast with LNN/DeLaN)
@@ -53,8 +53,8 @@ pinn_2026/
 | | Script | Topic |
 |---|---|---|
 | Example 1 | `examples/pinn/pinn_cooling.py` | 1st-order ODE, core concept with minimal setup |
-| Example 2 | `examples/pinn/pinn_vs_nn.py` | 2nd-order ODE, extrapolation vs plain NN |
-| Exercise 1 | `excercises/pinn/pinn_identification.py` | Use physics loss for parameter estimation |
+| Example 2 | `examples/pinn/pinn_vs_nn_mck.py` | 2nd-order MCK ODE, extrapolation vs plain NN |
+| Exercise 1 | `excercises/pinn/pinn_identification.py` | Identify unknown c; compare raw vs softplus parameterisation |
 | Exercise 2 | `excercises/pinn/pinn_2dof_spring_damper.py` | Scale to a multi-DOF system |
 | Exercise 3 | `excercises/pinn/pinn_multi_traj.py` | Generalise across initial conditions |
 | Exercise 4 | `excercises/pinn/pinn_spring_pendulum.py` | PINN on 2-DOF system — contrast with LNN/DeLaN |

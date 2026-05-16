@@ -7,9 +7,9 @@ Each script builds directly on an example — read the corresponding example REA
 
 | # | Script | Builds on | What to implement |
 |---|---|---|---|
-| 1 | `pinn/pinn_identification.py` | `examples/pinn/pinn_vs_nn.py` | Make system parameter δ a learnable variable driven by the physics loss |
-| 2 | `pinn/pinn_2dof_spring_damper.py` | `examples/pinn/pinn_vs_nn.py` | Extend to a 2-DOF coupled ODE with a 2-output network |
-| 3 | `pinn/pinn_multi_traj.py` | `examples/pinn/pinn_vs_nn.py` | Train on multiple trajectories; generalise to unseen initial conditions |
+| 1 | `pinn/pinn_identification.py` | `examples/pinn/pinn_vs_nn_mck.py` | Identify unknown damping c; compare raw (unconstrained) vs softplus (positive-constrained) parameterisation |
+| 2 | `pinn/pinn_2dof_spring_damper.py` | `examples/pinn/pinn_vs_nn_mck.py` | Extend to a 2-DOF coupled ODE with a 2-output network |
+| 3 | `pinn/pinn_multi_traj.py` | `examples/pinn/pinn_vs_nn_mck.py` | Train on multiple trajectories; generalise to unseen initial conditions |
 | 4 | `pinn/pinn_spring_pendulum.py` | `examples/lnn/lnn_vs_delan.py` | Apply PINN to the same 2-DOF spring pendulum; contrast with LNN/DeLaN |
 
 ## Lecture 2 — Lagrangian network exercises
