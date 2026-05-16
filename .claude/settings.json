@@ -23,7 +23,8 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\('examples/lnn/lnn_vs_delan.py'\\).read\\(\\)\\); print\\('syntax OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('excercises/pinn/pinn_spring_pendulum.py'\\).read\\(\\)\\); print\\('syntax OK'\\)\")",
       "Bash(python gen_notebooks.py)",
-      "Bash(python -c \"import json; nb=json.load\\(open\\('examples/pinn/pinn_cooling.ipynb'\\)\\); print\\('cells:', len\\(nb['cells']\\)\\); [print\\(f'  [{c[\\\\\"cell_type\\\\\"][0]}] {c[\\\\\"source\\\\\"][:60]!r}'\\) for c in nb['cells']]\")"
+      "Bash(python -c \"import json; nb=json.load\\(open\\('examples/pinn/pinn_cooling.ipynb'\\)\\); print\\('cells:', len\\(nb['cells']\\)\\); [print\\(f'  [{c[\\\\\"cell_type\\\\\"][0]}] {c[\\\\\"source\\\\\"][:60]!r}'\\) for c in nb['cells']]\")",
+      "Bash(pdflatex -interaction=nonstopmode main.tex)"
     ],
     "additionalDirectories": [
       "/home/paolofranceschi/pinn_2026"
